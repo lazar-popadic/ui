@@ -20,7 +20,7 @@ void time_ISR(void) {
 	knob_position_read();
 }
 
-void time_start(void) {
+void time_init(void) {
 	HAL_TIM_Base_Start_IT(&htim10);
 }
 

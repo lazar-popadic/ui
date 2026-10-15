@@ -9,7 +9,7 @@
 #define LIB_TIMER_H_
 
 void time_ISR(void);
-void time_start(void);
+void time_init(void);
 uint8_t time_delay(uint32_t *start_time, uint32_t delay_ms);
 
 #endif /* LIB_TIMER_H_ */

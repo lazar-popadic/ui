@@ -40,6 +40,7 @@ void knob_init(void) {
 }
 
 void knob_position_read(void) {
+	// TODO: obradi diff tako da bude samo umnozak 4 (zbog kvadraturnog dekodiranja) i += diff/4;
 	knob_position_ += count_diff(&htim3);
 }
 
