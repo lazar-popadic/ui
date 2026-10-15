@@ -17,6 +17,7 @@ void time_ISR(void) {
 	sys_time_s += dt_;
 	chinch_read(dt_);
 	knob_button_read(dt_);
+	knob_position_read();
 }
 
 void time_start(void) {

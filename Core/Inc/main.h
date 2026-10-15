@@ -67,8 +67,8 @@ void Error_Handler(void);
 #define Encoder_A_GPIO_Port GPIOA
 #define Encoder_B_Pin GPIO_PIN_7
 #define Encoder_B_GPIO_Port GPIOA
-#define Knob_button_Pin GPIO_PIN_12
-#define Knob_button_GPIO_Port GPIOA
+#define Knob_button_Pin GPIO_PIN_0
+#define Knob_button_GPIO_Port GPIOB
 #define Chinch_Pin GPIO_PIN_15
 #define Chinch_GPIO_Port GPIOA
 
