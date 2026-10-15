@@ -53,6 +53,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : Knob_button_Pin */
+  GPIO_InitStruct.Pin = Knob_button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(Knob_button_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : Chinch_Pin */
   GPIO_InitStruct.Pin = Chinch_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;

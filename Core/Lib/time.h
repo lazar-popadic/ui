@@ -10,6 +10,6 @@
 
 void time_ISR(void);
 void time_start(void);
-uint8_t delay_nb_2(uint32_t *start_time, uint32_t delay_ms);
+uint8_t time_delay(uint32_t *start_time, uint32_t delay_ms);
 
 #endif /* LIB_TIMER_H_ */

@@ -35,6 +35,7 @@ extern "C" {
 
 #include "../Lib/time.h"
 #include "../Lib/chinch.h"
+#include "../Lib/knob.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -62,6 +63,12 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_Pin GPIO_PIN_13
 #define LED_GPIO_Port GPIOC
+#define Encoder_A_Pin GPIO_PIN_6
+#define Encoder_A_GPIO_Port GPIOA
+#define Encoder_B_Pin GPIO_PIN_7
+#define Encoder_B_GPIO_Port GPIOA
+#define Knob_button_Pin GPIO_PIN_12
+#define Knob_button_GPIO_Port GPIOA
 #define Chinch_Pin GPIO_PIN_15
 #define Chinch_GPIO_Port GPIOA
 
