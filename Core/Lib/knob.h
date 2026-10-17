@@ -8,10 +8,14 @@
 #ifndef LIB_KNOB_H_
 #define LIB_KNOB_H_
 
-void knob_button_read(float dt);
-uint8_t get_knob_button(void);
 void knob_init(void);
+
+int8_t knob_button_read(float dt);
+int8_t knob_button_edge(void);
+uint8_t get_knob_button(void);
+
 void knob_position_read(void);
-uint8_t get_knob_position(void);
+uint16_t get_knob_position(void);
+
 
 #endif /* LIB_KNOB_H_ */

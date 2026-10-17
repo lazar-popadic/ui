@@ -14,13 +14,18 @@ static int16_t count_diff(TIM_HandleTypeDef *htim);
 static volatile uint8_t knob_button_debounced_;
 static float knob_button_time_ = 0.02f;
 static float knob_button_time_accumulated_ = 0.0f;
+static volatile uint8_t knob_button_prev_;
 
-static volatile uint8_t knob_position_ = 0;
+static volatile uint16_t knob_position_ = 0;
 static volatile uint16_t knob_position_raw_ = 0x7fff;
 static volatile int16_t previous_knob_position_raw_ = 0;
 
-void knob_button_read(float dt) {
-	uint8_t knob_button_raw = !!(Knob_button_GPIO_Port->IDR & Knob_button_Pin);
+void knob_init(void) {
+	HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+}
+
+int8_t knob_button_read(float dt) {
+	uint8_t knob_button_raw = !(Knob_button_GPIO_Port->IDR & Knob_button_Pin);
 	if (knob_button_raw != knob_button_debounced_) {
 		knob_button_time_accumulated_ += dt;
 		if (knob_button_time_accumulated_ >= knob_button_time_) {
@@ -30,23 +35,26 @@ void knob_button_read(float dt) {
 	} else {
 		knob_button_time_accumulated_ = 0.0f;
 	}
+	return knob_button_edge();
+}
+
+int8_t knob_button_edge(void) {
+	int8_t diff = knob_button_debounced_ - knob_button_prev_;
+	knob_button_prev_ = knob_button_debounced_;
+	return diff;
 }
 
 uint8_t get_knob_button(void) {
 	return knob_button_debounced_;
 }
 
-void knob_init(void) {
-	HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
-}
-
 void knob_position_read(void) {
 	knob_position_raw_ += count_diff(&htim3);
-	knob_position_ = (int16_t) ((float) knob_position_raw_ * 0.25f
+	knob_position_ = (uint16_t) ((float) knob_position_raw_ * 0.25f
 			+ 0.5f * sign(knob_position_raw_));
 }
 
-uint8_t get_knob_position(void) {
+uint16_t get_knob_position(void) {
 	return knob_position_;
 }
 

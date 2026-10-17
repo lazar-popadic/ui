@@ -11,13 +11,17 @@
 static uint32_t sys_time_ms = 0;
 static float sys_time_s = 0.0f;
 static const float dt_ = 0.001;
+static int8_t knob_button_edge_;
 
 void time_ISR(void) {
 	sys_time_ms++;
 	sys_time_s += dt_;
 	chinch_read(dt_);
-	knob_button_read(dt_);
+	knob_button_edge_ = knob_button_read(dt_);
 	knob_position_read();
+
+	if (knob_button_edge_ == 1)
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 }
 
 void time_init(void) {
