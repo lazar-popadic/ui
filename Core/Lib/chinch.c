@@ -12,17 +12,10 @@ static volatile uint8_t chinch_debounced_;
 static float chinch_time_ = 0.02f;
 static float chinch_time_accumulated_ = 0.0f;
 
-void chinch_read(float dt) {
+uint8_t chinch_read(float dt) {
 	uint8_t chinch_raw = !!(Chinch_GPIO_Port->IDR & Chinch_Pin);
-	if (chinch_raw != chinch_debounced_) {
-		chinch_time_accumulated_ += dt;
-		if (chinch_time_accumulated_ >= chinch_time_) {
-			chinch_time_accumulated_ = 0.0f;
-			chinch_debounced_ = chinch_raw;
-		}
-	} else {
-		chinch_time_accumulated_ = 0.0f;
-	}
+	debounce(&chinch_debounced_, chinch_raw, &chinch_time_accumulated_, chinch_time_, dt);
+	return chinch_debounced_;
 }
 
 uint8_t get_chinch(void) {

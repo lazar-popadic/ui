@@ -9,5 +9,7 @@
 #define LIB_SIGNAL_H_
 
 int8_t sign(float x);
+void debounce(uint8_t *debounced, uint8_t raw, float *time_accumulated,
+		float time, float dt);
 
 #endif /* LIB_SIGNAL_H_ */
