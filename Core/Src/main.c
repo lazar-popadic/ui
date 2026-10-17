@@ -44,7 +44,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-int16_t knob_pos_test = 0;
+uint8_t knob_pos_test_ = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -99,7 +99,7 @@ int main(void) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		knob_pos_test = get_knob_position();
+		knob_pos_test_ = get_knob_position();
 		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, get_knob_button());
 	}
 	/* USER CODE END 3 */

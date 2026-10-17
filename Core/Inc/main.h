@@ -36,6 +36,7 @@ extern "C" {
 #include "../Lib/time.h"
 #include "../Lib/chinch.h"
 #include "../Lib/knob.h"
+#include "../Lib/signal.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
