@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
+#include "spi.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -86,11 +88,15 @@ int main(void) {
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
+	MX_DMA_Init();
 	MX_TIM10_Init();
 	MX_TIM3_Init();
+	MX_SPI1_Init();
 	/* USER CODE BEGIN 2 */
 	time_init();
 	knob_init();
+
+	ST7789_Init();
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -99,6 +105,7 @@ int main(void) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
+		ST7789_Test();
 	}
 	/* USER CODE END 3 */
 }

@@ -15,7 +15,7 @@ int8_t sign(float x) {
 	return 0;
 }
 
-void debounce(uint8_t *debounced, uint8_t raw, float *time_accumulated,
+void debounce(volatile uint8_t *debounced, uint8_t raw, float *time_accumulated,
 		float time, float dt) {
 	if (raw != *debounced) {
 		*time_accumulated += dt;

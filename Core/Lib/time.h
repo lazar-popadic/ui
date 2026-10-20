@@ -8,6 +8,8 @@
 #ifndef LIB_TIMER_H_
 #define LIB_TIMER_H_
 
+#include <stdint.h>
+
 void time_ISR(void);
 void time_init(void);
 uint8_t time_delay(uint32_t *start_time, uint32_t delay_ms);
