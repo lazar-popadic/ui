@@ -32,11 +32,13 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
+#include <math.h>
 
 #include "time.h"
 #include "chinch.h"
 #include "knob.h"
 #include "signal.h"
+#include "ui.h"
 
 #include "st7789.h"
 /* USER CODE END Includes */
