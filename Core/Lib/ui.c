@@ -72,7 +72,7 @@ void top_panel_loop(uint8_t chinch, uint8_t button, uint16_t knob_pos) {
 		}
 
 		knob_dot(&knob_x_, &knob_y_, 159, 19, 16,
-				(knob_pos_ - 8192) * M_PI / 6 - M_PI * 0.5f);
+				(knob_pos_ - 8192) * M_PI / 10 - M_PI * 0.5f);
 		ST7789_DrawFilledCircle(knob_x_, knob_y_, 4, BG_COLOR);
 		ST7789_DrawCircle(knob_x_, knob_y_, 3, FG_COLOR);
 		ST7789_DrawCircle(knob_x_, knob_y_, 2, FG_COLOR);
