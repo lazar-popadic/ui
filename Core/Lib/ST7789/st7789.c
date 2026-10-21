@@ -383,6 +383,7 @@ void ST7789_Init(void)
 	}
     ST7789_WriteCommand (ST7789_INVON);		//	Inversion ON
 	ST7789_WriteCommand (ST7789_SLPOUT);	//	Out of sleep mode
+	HAL_Delay(5);							//	Datasheet: wait 5 ms before the next command
   	ST7789_WriteCommand (ST7789_NORON);		//	Normal Display on
   	ST7789_WriteCommand (ST7789_DISPON);	//	Main screen turned on
 
@@ -433,9 +434,8 @@ void ST7789_Fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, uin
  */
 void ST7789_DrawPixel_4px(uint16_t x, uint16_t y, uint16_t color)
 {
-	if ((x <= 0) || (x > ST7789_WIDTH) ||
-		 (y <= 0) || (y > ST7789_HEIGHT))	return;
-	ST7789_Fill(x - 1, y - 1, x + 1, y + 1, color);
+	/* 3x3 block centered on (x, y), clipped at the screen edges */
+	ST7789_FillArea((int32_t)x - 1, (int32_t)y - 1, (int32_t)x + 1, (int32_t)y + 1, color);
 }
 
 /**
@@ -525,13 +525,13 @@ static void ST7789_CircleArcs(int32_t x0, int32_t y0, int32_t xs, int32_t xe, in
 }
 
 /**
- * @brief Draw a circle with single color
- * @param x0&y0 -> coordinate of circle center
+ * @brief Draw a circle outline, clipped to the screen
+ * @param x0&y0 -> coordinate of circle center (may be off-screen)
  * @param r -> radius of circle
  * @param color -> color of circle line
  * @return  none
  */
-void ST7789_DrawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color)
+static void ST7789_CircleOutline(int32_t x0, int32_t y0, int32_t r, uint16_t color)
 {
 	int32_t f = 1 - r;
 	int32_t ddF_x = 1;
@@ -553,6 +553,18 @@ void ST7789_DrawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color)
 		f += ddF_x;
 	}
 	ST7789_CircleArcs(x0, y0, run_start, x, y, color);
+}
+
+/**
+ * @brief Draw a circle with single color
+ * @param x0&y0 -> coordinate of circle center
+ * @param r -> radius of circle
+ * @param color -> color of circle line
+ * @return  none
+ */
+void ST7789_DrawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color)
+{
+	ST7789_CircleOutline(x0, y0, r, color);
 }
 
 /**
@@ -590,8 +602,58 @@ void ST7789_InvertColors(uint8_t invert)
 }
 
 /**
+ * @brief Render len characters as one line with the top-left cell corner at
+ * (x0, y0), clipped to the screen. The visible part is rendered into the
+ * pixel buffer and sent as one window. Characters outside the font
+ * (printable ASCII) are drawn as '?'.
+ */
+static void ST7789_RenderText(int32_t x0, int32_t y0, const char *str, int32_t len,
+		FontDef font, uint16_t color, uint16_t bgcolor)
+{
+	int32_t x1 = x0 + len * font.width - 1;
+	int32_t y1 = y0 + font.height - 1;
+
+	/* Visible part */
+	int32_t vx0 = x0 < 0 ? 0 : x0;
+	int32_t vy0 = y0 < 0 ? 0 : y0;
+	int32_t vx1 = x1 >= ST7789_WIDTH ? ST7789_WIDTH - 1 : x1;
+	int32_t vy1 = y1 >= ST7789_HEIGHT ? ST7789_HEIGHT - 1 : y1;
+	if (len <= 0 || vx0 > vx1 || vy0 > vy1)
+		return;
+
+	uint16_t fg = ST7789_Swap16(color), bg = ST7789_Swap16(bgcolor);
+	uint32_t vw = vx1 - vx0 + 1, n = 0;
+	int32_t y, i, j;
+
+	ST7789_Begin();
+	ST7789_SetAddressWindow(vx0, vy0, vx1, vy1);
+	ST7789_DC_Set();
+
+	for (y = vy0; y <= vy1; y++) {
+		if (n + vw > DISP_BUF_LEN) {
+			ST7789_SPI_Write((uint8_t *)disp_buf, n * sizeof(uint16_t));
+			n = 0;
+		}
+		for (i = 0; i < len; i++) {
+			char ch = str[i];
+			if (ch < 32 || ch > 126)
+				ch = '?';
+			uint32_t b = font.data[(ch - 32) * font.height + (y - y0)];
+			int32_t x = x0 + i * font.width;
+			for (j = 0; j < font.width; j++, x++) {
+				if (x < vx0 || x > vx1)
+					continue;
+				disp_buf[n++] = ((b << j) & 0x8000) ? fg : bg;
+			}
+		}
+	}
+	ST7789_SPI_Write((uint8_t *)disp_buf, n * sizeof(uint16_t));
+
+	ST7789_End();
+}
+
+/**
  * @brief Write a char
- * The glyph is rendered into the pixel buffer and sent in one burst.
  * @param  x&y -> cursor of the start point.
  * @param ch -> char to write
  * @param font -> fontstyle of the string
@@ -601,25 +663,7 @@ void ST7789_InvertColors(uint8_t invert)
  */
 void ST7789_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor)
 {
-	uint32_t i, b, j, n = 0;
-	uint16_t fg = ST7789_Swap16(color), bg = ST7789_Swap16(bgcolor);
-
-	ST7789_Begin();
-	ST7789_SetAddressWindow(x, y, x + font.width - 1, y + font.height - 1);
-	ST7789_DC_Set();
-
-	for (i = 0; i < font.height; i++) {
-		if (n + font.width > DISP_BUF_LEN) {
-			ST7789_SPI_Write((uint8_t *)disp_buf, n * sizeof(uint16_t));
-			n = 0;
-		}
-		b = font.data[(ch - 32) * font.height + i];
-		for (j = 0; j < font.width; j++)
-			disp_buf[n++] = ((b << j) & 0x8000) ? fg : bg;
-	}
-	ST7789_SPI_Write((uint8_t *)disp_buf, n * sizeof(uint16_t));
-
-	ST7789_End();
+	ST7789_RenderText(x, y, &ch, 1, font, color, bgcolor);
 }
 
 /**
@@ -633,12 +677,19 @@ void ST7789_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t co
  */
 void ST7789_WriteString(uint16_t x, uint16_t y, const char *str, FontDef font, uint16_t color, uint16_t bgcolor)
 {
+	/* Characters that end up on the same line are sent as one run */
+	const char *run = str;
+	uint16_t run_x = x;
+	int32_t run_len = 0;
+
 	while (*str) {
-		if (x + font.width >= ST7789_WIDTH) {
+		if (x + font.width > ST7789_WIDTH) {
+			ST7789_RenderText(run_x, y, run, run_len, font, color, bgcolor);
+			run_len = 0;
 			x = 0;
 			y += font.height;
-			if (y + font.height >= ST7789_HEIGHT) {
-				break;
+			if (y + font.height > ST7789_HEIGHT) {
+				return;
 			}
 
 			if (*str == ' ') {
@@ -647,10 +698,15 @@ void ST7789_WriteString(uint16_t x, uint16_t y, const char *str, FontDef font, u
 				continue;
 			}
 		}
-		ST7789_WriteChar(x, y, *str, font, color, bgcolor);
+		if (run_len == 0) {
+			run = str;
+			run_x = x;
+		}
+		run_len++;
 		x += font.width;
 		str++;
 	}
+	ST7789_RenderText(run_x, y, run, run_len, font, color, bgcolor);
 }
 
 /**
@@ -688,69 +744,98 @@ void ST7789_DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uin
 }
 
 /**
+ * @brief Walk a line pixel by pixel exactly like ST7789_DrawLine and widen
+ * the span [xmin, xmax] of every on-screen row it touches.
+ * x is stored clamped to ST7789_WIDTH (anything past the right edge is clipped anyway).
+ */
+static void ST7789_TriangleEdge(int32_t x0, int32_t y0, int32_t xe, int32_t ye,
+		int16_t *xmin, int16_t *xmax)
+{
+	int32_t swap;
+	int32_t steep = ABS(ye - y0) > ABS(xe - x0);
+	if (steep) {
+		swap = x0;
+		x0 = y0;
+		y0 = swap;
+
+		swap = xe;
+		xe = ye;
+		ye = swap;
+	}
+
+	if (x0 > xe) {
+		swap = x0;
+		x0 = xe;
+		xe = swap;
+
+		swap = y0;
+		y0 = ye;
+		ye = swap;
+	}
+
+	int32_t dx = xe - x0;
+	int32_t dy = ABS(ye - y0);
+	int32_t err = dx / 2;
+	int32_t ystep = (y0 < ye) ? 1 : -1;
+
+	for (; x0 <= xe; x0++) {
+		int32_t px = steep ? y0 : x0;
+		int32_t py = steep ? x0 : y0;
+		if (py >= 0 && py < ST7789_HEIGHT) {
+			if (px > ST7789_WIDTH)
+				px = ST7789_WIDTH;
+			if (px < xmin[py])
+				xmin[py] = px;
+			if (px > xmax[py])
+				xmax[py] = px;
+		}
+		err -= dy;
+		if (err < 0) {
+			y0 += ystep;
+			err += dx;
+		}
+	}
+}
+
+/**
  * @brief Draw a filled Triangle with single color
+ * Each row is one span between the triangle's outline pixels, so the fill
+ * covers exactly what ST7789_DrawTriangle draws for the same points.
  * @param  xi&yi -> 3 coordinates of 3 top points.
  * @param color ->color of the triangle
  * @return  none
  */
 void ST7789_DrawFilledTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint16_t color)
 {
-	int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0,
-			yinc1 = 0, yinc2 = 0, den = 0, num = 0, numadd = 0, numpixels = 0,
-			curpixel = 0;
+	int16_t xmin[ST7789_HEIGHT], xmax[ST7789_HEIGHT];
+	int32_t y;
+	int32_t ytop = y1, ybot = y1;
 
-	deltax = ABS(x2 - x1);
-	deltay = ABS(y2 - y1);
-	x = x1;
-	y = y1;
+	if (y2 < ytop)
+		ytop = y2;
+	if (y3 < ytop)
+		ytop = y3;
+	if (y2 > ybot)
+		ybot = y2;
+	if (y3 > ybot)
+		ybot = y3;
+	if (ytop >= ST7789_HEIGHT)
+		return;
+	if (ybot >= ST7789_HEIGHT)
+		ybot = ST7789_HEIGHT - 1;
 
-	if (x2 >= x1) {
-		xinc1 = 1;
-		xinc2 = 1;
-	}
-	else {
-		xinc1 = -1;
-		xinc2 = -1;
-	}
-
-	if (y2 >= y1) {
-		yinc1 = 1;
-		yinc2 = 1;
-	}
-	else {
-		yinc1 = -1;
-		yinc2 = -1;
+	for (y = ytop; y <= ybot; y++) {
+		xmin[y] = INT16_MAX;
+		xmax[y] = INT16_MIN;
 	}
 
-	if (deltax >= deltay) {
-		xinc1 = 0;
-		yinc2 = 0;
-		den = deltax;
-		num = deltax / 2;
-		numadd = deltay;
-		numpixels = deltax;
-	}
-	else {
-		xinc2 = 0;
-		yinc1 = 0;
-		den = deltay;
-		num = deltay / 2;
-		numadd = deltax;
-		numpixels = deltay;
-	}
+	ST7789_TriangleEdge(x1, y1, x2, y2, xmin, xmax);
+	ST7789_TriangleEdge(x2, y2, x3, y3, xmin, xmax);
+	ST7789_TriangleEdge(x3, y3, x1, y1, xmin, xmax);
 
-	for (curpixel = 0; curpixel <= numpixels; curpixel++) {
-		ST7789_DrawLine(x, y, x3, y3, color);
-
-		num += numadd;
-		if (num >= den) {
-			num -= den;
-			x += xinc1;
-			y += yinc1;
-		}
-		x += xinc2;
-		y += yinc2;
-	}
+	for (y = ytop; y <= ybot; y++)
+		if (xmin[y] <= xmax[y])
+			ST7789_FillArea(xmin[y], y, xmax[y], y, color);
 }
 
 /**
@@ -800,6 +885,114 @@ void ST7789_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 	ST7789_CircleRows(x0, y0, y, x, color);
 }
 
+/*
+ * Centered drawing functions.
+ * Every shape is given by its center pixel (cx, cy) and its size, and is
+ * clipped to the screen, so the center may lie off-screen.
+ * A size of w pixels spans cx - w/2 .. cx - w/2 + w - 1: odd sizes are
+ * symmetric, even sizes have the extra pixel on the left/top.
+ * A circle of radius r spans 2r+1 pixels, the same as a rectangle of
+ * w = h = 2r+1 with the same center.
+ */
+
+/**
+ * @brief Draw a rectangle outline (1 px) by center and size
+ * @param cx&cy -> center pixel
+ * @param w&h -> outer width & height in pixels
+ * @param color -> color of the outline
+ * @return none
+ */
+void ST7789_Rect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color)
+{
+	if (w == 0 || h == 0)
+		return;
+	int32_t x0 = cx - w / 2, y0 = cy - h / 2;
+	int32_t x1 = x0 + w - 1, y1 = y0 + h - 1;
+
+	ST7789_FillArea(x0, y0, x1, y0, color);
+	ST7789_FillArea(x0, y1, x1, y1, color);
+	ST7789_FillArea(x0, y0, x0, y1, color);
+	ST7789_FillArea(x1, y0, x1, y1, color);
+}
+
+/**
+ * @brief Draw a filled rectangle by center and size
+ * @param cx&cy -> center pixel
+ * @param w&h -> width & height in pixels
+ * @param color -> color of the rectangle
+ * @return none
+ */
+void ST7789_FillRect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color)
+{
+	if (w == 0 || h == 0)
+		return;
+	int32_t x0 = cx - w / 2, y0 = cy - h / 2;
+	ST7789_FillArea(x0, y0, x0 + w - 1, y0 + h - 1, color);
+}
+
+/**
+ * @brief Draw a circle outline by center and radius
+ * @param cx&cy -> center pixel
+ * @param r -> radius (the circle spans 2r+1 pixels)
+ * @param color -> color of the outline
+ * @return none
+ */
+void ST7789_Circle(int16_t cx, int16_t cy, uint16_t r, uint16_t color)
+{
+	ST7789_CircleOutline(cx, cy, r, color);
+}
+
+/**
+ * @brief Draw a filled circle by center and radius
+ * @param cx&cy -> center pixel
+ * @param r -> radius (the circle spans 2r+1 pixels)
+ * @param color -> color of the circle
+ * @return none
+ */
+void ST7789_FillCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color)
+{
+	ST7789_DrawFilledCircle(cx, cy, r, color);
+}
+
+/**
+ * @brief Row (from the top of the character cell) in the middle of the
+ * capital letters, taken from the glyph 'H'. The cell has room for
+ * descenders below, so centering on capitals looks centered to the eye.
+ */
+static int32_t ST7789_FontCapMiddle(FontDef font)
+{
+	const uint16_t *glyph = &font.data[('H' - 32) * font.height];
+	int32_t top = 0, bottom = font.height - 1;
+
+	while (top < bottom && glyph[top] == 0)
+		top++;
+	while (bottom > top && glyph[bottom] == 0)
+		bottom--;
+	return (top + bottom) / 2;
+}
+
+/**
+ * @brief Write a single line of text centered on a pixel
+ * Horizontally the whole string is centered; vertically the capital letters
+ * are. Character cells are filled with bgcolor. No wrapping: whatever falls
+ * off-screen is clipped.
+ * @param cx&cy -> center pixel
+ * @param str -> string to write
+ * @param font -> fontstyle of the string
+ * @param color -> color of the text
+ * @param bgcolor -> background color of the text
+ * @return none
+ */
+void ST7789_Text(int16_t cx, int16_t cy, const char *str, FontDef font, uint16_t color, uint16_t bgcolor)
+{
+	int32_t len = 0;
+	while (str[len])
+		len++;
+
+	ST7789_RenderText(cx - (len * font.width) / 2, cy - ST7789_FontCapMiddle(font),
+			str, len, font, color, bgcolor);
+}
+
 
 /**
  * @brief Open/Close tearing effect line
@@ -809,7 +1002,12 @@ void ST7789_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 void ST7789_TearEffect(uint8_t tear)
 {
 	ST7789_Begin();
-	ST7789_WriteCommand(tear ? 0x35 /* TEON */ : 0x34 /* TEOFF */);
+	if (tear) {
+		ST7789_WriteCommand(0x35 /* TEON */);
+		ST7789_WriteSmallData(0x00);	// TEM = 0: signal on V-blank only
+	}
+	else
+		ST7789_WriteCommand(0x34 /* TEOFF */);
 	ST7789_End();
 }
 

@@ -278,6 +278,16 @@ void ST7789_DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uin
 void ST7789_DrawFilledTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint16_t color);
 void ST7789_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
 
+/* Centered drawing functions: center pixel + size, clipped to the screen.
+ * A size of w pixels spans cx - w/2 .. cx - w/2 + w - 1 (odd sizes are symmetric).
+ * A circle of radius r spans 2r+1 pixels. Text is one line, centered
+ * horizontally on the whole string and vertically on the capital letters. */
+void ST7789_Rect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color);
+void ST7789_FillRect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color);
+void ST7789_Circle(int16_t cx, int16_t cy, uint16_t r, uint16_t color);
+void ST7789_FillCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color);
+void ST7789_Text(int16_t cx, int16_t cy, const char *str, FontDef font, uint16_t color, uint16_t bgcolor);
+
 /* Command functions */
 void ST7789_TearEffect(uint8_t tear);
 
