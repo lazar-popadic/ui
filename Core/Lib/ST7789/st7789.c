@@ -23,8 +23,7 @@ static volatile uint8_t fill_pending;
 static uint16_t fill_color;
 #endif
 
-static inline uint16_t ST7789_Swap16(uint16_t v)
-{
+static inline uint16_t ST7789_Swap16(uint16_t v) {
 	return (v >> 8) | (v << 8);
 }
 
@@ -34,12 +33,11 @@ static inline uint16_t ST7789_Swap16(uint16_t v)
  * so one color value can be repeated for a whole fill.
  * SPI must be idle.
  */
-static void ST7789_SPI_Mode16Fixed(void)
-{
+static void ST7789_SPI_Mode16Fixed(void) {
 	SPI_TypeDef *spi = ST7789_SPI_PORT.Instance;
 	DMA_Stream_TypeDef *dma = ST7789_SPI_PORT.hdmatx->Instance;
 
-	CLEAR_BIT(spi->CR1, SPI_CR1_SPE);	// DFF may only change while SPI is disabled
+	CLEAR_BIT(spi->CR1, SPI_CR1_SPE);// DFF may only change while SPI is disabled
 	SET_BIT(spi->CR1, SPI_CR1_DFF);
 	SET_BIT(spi->CR1, SPI_CR1_SPE);
 	MODIFY_REG(dma->CR, DMA_SxCR_MINC | DMA_SxCR_PSIZE | DMA_SxCR_MSIZE,
@@ -50,8 +48,7 @@ static void ST7789_SPI_Mode16Fixed(void)
  * @brief Restore 8-bit SPI frames and the incrementing 8-bit TX DMA set up by CubeMX.
  * SPI must be idle.
  */
-static void ST7789_SPI_Mode8(void)
-{
+static void ST7789_SPI_Mode8(void) {
 	SPI_TypeDef *spi = ST7789_SPI_PORT.Instance;
 	DMA_Stream_TypeDef *dma = ST7789_SPI_PORT.hdmatx->Instance;
 
@@ -69,13 +66,12 @@ static void ST7789_SPI_Mode8(void)
  * know the display is done (e.g. before sharing SPI1 or entering sleep).
  * @return none
  */
-void ST7789_WaitIdle(void)
-{
+void ST7789_WaitIdle(void) {
 #ifdef USE_DMA
 	if (!fill_pending)
 		return;
-	while (HAL_SPI_GetState(&ST7789_SPI_PORT) != HAL_SPI_STATE_READY)
-	{}
+	while (HAL_SPI_GetState(&ST7789_SPI_PORT) != HAL_SPI_STATE_READY) {
+	}
 	ST7789_SPI_Mode8();
 	ST7789_UnSelect();
 	fill_pending = 0;
@@ -83,15 +79,13 @@ void ST7789_WaitIdle(void)
 }
 
 /* Start a transaction: finish any background fill, then select the display */
-static void ST7789_Begin(void)
-{
+static void ST7789_Begin(void) {
 	ST7789_WaitIdle();
 	ST7789_Select();
 }
 
 /* End a transaction; a background fill keeps CS low until it completes */
-static void ST7789_End(void)
-{
+static void ST7789_End(void) {
 #ifdef USE_DMA
 	if (fill_pending)
 		return;
@@ -107,18 +101,17 @@ static void ST7789_End(void)
  * @param buff_size -> size of the data buffer
  * @return none
  */
-static void ST7789_SPI_Write(const uint8_t *buff, size_t buff_size)
-{
+static void ST7789_SPI_Write(const uint8_t *buff, size_t buff_size) {
 #ifdef USE_DMA
 	if (buff_size >= DMA_MIN_SIZE) {
 		// split data in small chunks because HAL can't send more than 64K at once
 		while (buff_size > 0) {
 			uint16_t chunk_size = buff_size > 65535 ? 65535 : buff_size;
-			HAL_SPI_Transmit_DMA(&ST7789_SPI_PORT, (uint8_t *)buff, chunk_size);
+			HAL_SPI_Transmit_DMA(&ST7789_SPI_PORT, (uint8_t*) buff, chunk_size);
 			/* Wait on the SPI state, not the DMA state: the DMA finishes
 			 * before the last byte has been shifted out. */
-			while (HAL_SPI_GetState(&ST7789_SPI_PORT) != HAL_SPI_STATE_READY)
-			{}
+			while (HAL_SPI_GetState(&ST7789_SPI_PORT) != HAL_SPI_STATE_READY) {
+			}
 			buff += chunk_size;
 			buff_size -= chunk_size;
 		}
@@ -127,17 +120,17 @@ static void ST7789_SPI_Write(const uint8_t *buff, size_t buff_size)
 #endif
 	SPI_TypeDef *spi = ST7789_SPI_PORT.Instance;
 	while (buff_size--) {
-		while (!(spi->SR & SPI_SR_TXE))
-		{}
-		*(__IO uint8_t *)&spi->DR = *buff++;
+		while (!(spi->SR & SPI_SR_TXE)) {
+		}
+		*(__IO uint8_t*) &spi->DR = *buff++;
 	}
-	while (!(spi->SR & SPI_SR_TXE))
-	{}
-	while (spi->SR & SPI_SR_BSY)
-	{}
+	while (!(spi->SR & SPI_SR_TXE)) {
+	}
+	while (spi->SR & SPI_SR_BSY) {
+	}
 	/* Discard what was clocked in on MISO, clearing the overrun flag */
-	(void)spi->DR;
-	(void)spi->SR;
+	(void) spi->DR;
+	(void) spi->SR;
 }
 
 /*
@@ -150,8 +143,7 @@ static void ST7789_SPI_Write(const uint8_t *buff, size_t buff_size)
  * @param cmd -> command to write
  * @return none
  */
-static void ST7789_WriteCommand(uint8_t cmd)
-{
+static void ST7789_WriteCommand(uint8_t cmd) {
 	ST7789_DC_Clr();
 	ST7789_SPI_Write(&cmd, sizeof(cmd));
 }
@@ -162,8 +154,7 @@ static void ST7789_WriteCommand(uint8_t cmd)
  * @param buff_size -> size of the data buffer
  * @return none
  */
-static void ST7789_WriteData(const uint8_t *buff, size_t buff_size)
-{
+static void ST7789_WriteData(const uint8_t *buff, size_t buff_size) {
 	ST7789_DC_Set();
 	ST7789_SPI_Write(buff, buff_size);
 }
@@ -173,8 +164,7 @@ static void ST7789_WriteData(const uint8_t *buff, size_t buff_size)
  * data -> data to write
  * @return none
  */
-static void ST7789_WriteSmallData(uint8_t data)
-{
+static void ST7789_WriteSmallData(uint8_t data) {
 	ST7789_WriteData(&data, sizeof(data));
 }
 
@@ -183,21 +173,23 @@ static void ST7789_WriteSmallData(uint8_t data)
  * @param m -> rotation parameter(please refer it in st7789.h)
  * @return none
  */
-static void ST7789_SendRotation(uint8_t m)
-{
+static void ST7789_SendRotation(uint8_t m) {
 	ST7789_WriteCommand(ST7789_MADCTL);	// MADCTL
 	switch (m) {
 	case 0:
-		ST7789_WriteSmallData(ST7789_MADCTL_MX | ST7789_MADCTL_MY | ST7789_MADCTL_RGB);
+		ST7789_WriteSmallData(
+				ST7789_MADCTL_MX | ST7789_MADCTL_MY | ST7789_MADCTL_RGB);
 		break;
 	case 1:
-		ST7789_WriteSmallData(ST7789_MADCTL_MY | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);
+		ST7789_WriteSmallData(
+				ST7789_MADCTL_MY | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);
 		break;
 	case 2:
 		ST7789_WriteSmallData(ST7789_MADCTL_RGB);
 		break;
 	case 3:
-		ST7789_WriteSmallData(ST7789_MADCTL_MX | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);
+		ST7789_WriteSmallData(
+				ST7789_MADCTL_MX | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);
 		break;
 	default:
 		break;
@@ -209,8 +201,7 @@ static void ST7789_SendRotation(uint8_t m)
  * @param m -> rotation parameter(please refer it in st7789.h)
  * @return none
  */
-void ST7789_SetRotation(uint8_t m)
-{
+void ST7789_SetRotation(uint8_t m) {
 	ST7789_Begin();
 	ST7789_SendRotation(m);
 	ST7789_End();
@@ -221,22 +212,24 @@ void ST7789_SetRotation(uint8_t m)
  * @param xi&yi -> coordinates of window
  * @return none
  */
-static void ST7789_SetAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
-{
+static void ST7789_SetAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1,
+		uint16_t y1) {
 	uint16_t x_start = x0 + X_SHIFT, x_end = x1 + X_SHIFT;
 	uint16_t y_start = y0 + Y_SHIFT, y_end = y1 + Y_SHIFT;
 
 	/* Column Address set */
 	ST7789_WriteCommand(ST7789_CASET);
 	{
-		uint8_t data[] = {x_start >> 8, x_start & 0xFF, x_end >> 8, x_end & 0xFF};
+		uint8_t data[] = { x_start >> 8, x_start & 0xFF, x_end >> 8, x_end
+				& 0xFF };
 		ST7789_WriteData(data, sizeof(data));
 	}
 
 	/* Row Address set */
 	ST7789_WriteCommand(ST7789_RASET);
 	{
-		uint8_t data[] = {y_start >> 8, y_start & 0xFF, y_end >> 8, y_end & 0xFF};
+		uint8_t data[] = { y_start >> 8, y_start & 0xFF, y_end >> 8, y_end
+				& 0xFF };
 		ST7789_WriteData(data, sizeof(data));
 	}
 	/* Write to RAM */
@@ -252,20 +245,20 @@ static void ST7789_SetAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint1
  * @param count -> number of pixels
  * @return none
  */
-static void ST7789_WriteColor(uint16_t color, uint32_t count)
-{
+static void ST7789_WriteColor(uint16_t color, uint32_t count) {
 	ST7789_DC_Set();
 
 #ifdef USE_DMA
 	if (count * sizeof(uint16_t) >= DMA_MIN_SIZE) {
-		fill_color = color;		// 16-bit frames go out MSB first, no swap needed
+		fill_color = color;	// 16-bit frames go out MSB first, no swap needed
 		ST7789_SPI_Mode16Fixed();
 		fill_pending = 1;
 		while (count > 0) {
 			uint16_t chunk = count > 65535 ? 65535 : count;
-			while (HAL_SPI_GetState(&ST7789_SPI_PORT) != HAL_SPI_STATE_READY)
-			{}
-			HAL_SPI_Transmit_DMA(&ST7789_SPI_PORT, (uint8_t *)&fill_color, chunk);
+			while (HAL_SPI_GetState(&ST7789_SPI_PORT) != HAL_SPI_STATE_READY) {
+			}
+			HAL_SPI_Transmit_DMA(&ST7789_SPI_PORT, (uint8_t*) &fill_color,
+					chunk);
 			count -= chunk;
 		}
 		return;
@@ -280,7 +273,7 @@ static void ST7789_WriteColor(uint16_t color, uint32_t count)
 		px[i] = swapped;
 	while (count > 0) {
 		uint32_t chunk = count < 32 ? count : 32;
-		ST7789_SPI_Write((uint8_t *)px, chunk * sizeof(uint16_t));
+		ST7789_SPI_Write((uint8_t*) px, chunk * sizeof(uint16_t));
 		count -= chunk;
 	}
 }
@@ -292,8 +285,8 @@ static void ST7789_WriteColor(uint16_t color, uint32_t count)
  * @param color -> color to Fill with
  * @return none
  */
-static void ST7789_FillArea(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t color)
-{
+static void ST7789_FillArea(int32_t x0, int32_t y0, int32_t x1, int32_t y1,
+		uint16_t color) {
 	int32_t swap;
 	if (x0 > x1) {
 		swap = x0;
@@ -318,7 +311,8 @@ static void ST7789_FillArea(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint
 
 	ST7789_Begin();
 	ST7789_SetAddressWindow(x0, y0, x1, y1);
-	ST7789_WriteColor(color, (uint32_t)(x1 - x0 + 1) * (uint32_t)(y1 - y0 + 1));
+	ST7789_WriteColor(color,
+			(uint32_t) (x1 - x0 + 1) * (uint32_t) (y1 - y0 + 1));
 	ST7789_End();
 }
 
@@ -327,65 +321,66 @@ static void ST7789_FillArea(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint
  * @param none
  * @return none
  */
-void ST7789_Init(void)
-{
+void ST7789_Init(void) {
 	ST7789_WaitIdle();
 	HAL_Delay(10);
-    ST7789_RST_Clr();
-    HAL_Delay(10);
-    ST7789_RST_Set();
-    HAL_Delay(20);
+	ST7789_RST_Clr();
+	HAL_Delay(10);
+	ST7789_RST_Set();
+	HAL_Delay(20);
 
 	/* Short transfers write SPI registers directly, so the peripheral
 	 * must be enabled up front (HAL only enables it on its first transfer) */
 	__HAL_SPI_ENABLE(&ST7789_SPI_PORT);
 	ST7789_Begin();
 
-    ST7789_WriteCommand(ST7789_COLMOD);		//	Set color mode
-    ST7789_WriteSmallData(ST7789_COLOR_MODE_16bit);
-  	ST7789_WriteCommand(0xB2);				//	Porch control
+	ST7789_WriteCommand(ST7789_COLMOD);		//	Set color mode
+	ST7789_WriteSmallData(ST7789_COLOR_MODE_16bit);
+	ST7789_WriteCommand(0xB2);				//	Porch control
 	{
-		uint8_t data[] = {0x0C, 0x0C, 0x00, 0x33, 0x33};
+		uint8_t data[] = { 0x0C, 0x0C, 0x00, 0x33, 0x33 };
 		ST7789_WriteData(data, sizeof(data));
 	}
 	ST7789_SendRotation(ST7789_ROTATION);	//	MADCTL (Display Rotation)
 
 	/* Internal LCD Voltage generator settings */
-    ST7789_WriteCommand(0XB7);				//	Gate Control
-    ST7789_WriteSmallData(0x35);			//	Default value
-    ST7789_WriteCommand(0xBB);				//	VCOM setting
-    ST7789_WriteSmallData(0x19);			//	0.725v (default 0.75v for 0x20)
-    ST7789_WriteCommand(0xC0);				//	LCMCTRL
-    ST7789_WriteSmallData (0x2C);			//	Default value
-    ST7789_WriteCommand (0xC2);				//	VDV and VRH command Enable
-    ST7789_WriteSmallData (0x01);			//	Default value
-    ST7789_WriteCommand (0xC3);				//	VRH set
-    ST7789_WriteSmallData (0x12);			//	+-4.45v (defalut +-4.1v for 0x0B)
-    ST7789_WriteCommand (0xC4);				//	VDV set
-    ST7789_WriteSmallData (0x20);			//	Default value
-    ST7789_WriteCommand (0xC6);				//	Frame rate control in normal mode
-    ST7789_WriteSmallData (0x0F);			//	Default value (60HZ)
-    ST7789_WriteCommand (0xD0);				//	Power control
-    ST7789_WriteSmallData (0xA4);			//	Default value
-    ST7789_WriteSmallData (0xA1);			//	Default value
+	ST7789_WriteCommand(0XB7);				//	Gate Control
+	ST7789_WriteSmallData(0x35);			//	Default value
+	ST7789_WriteCommand(0xBB);				//	VCOM setting
+	ST7789_WriteSmallData(0x19);			//	0.725v (default 0.75v for 0x20)
+	ST7789_WriteCommand(0xC0);				//	LCMCTRL
+	ST7789_WriteSmallData(0x2C);			//	Default value
+	ST7789_WriteCommand(0xC2);				//	VDV and VRH command Enable
+	ST7789_WriteSmallData(0x01);			//	Default value
+	ST7789_WriteCommand(0xC3);				//	VRH set
+	ST7789_WriteSmallData(0x12);		//	+-4.45v (defalut +-4.1v for 0x0B)
+	ST7789_WriteCommand(0xC4);				//	VDV set
+	ST7789_WriteSmallData(0x20);			//	Default value
+	ST7789_WriteCommand(0xC6);			//	Frame rate control in normal mode
+	ST7789_WriteSmallData(0x0F);			//	Default value (60HZ)
+	ST7789_WriteCommand(0xD0);				//	Power control
+	ST7789_WriteSmallData(0xA4);			//	Default value
+	ST7789_WriteSmallData(0xA1);			//	Default value
 	/**************** Division line ****************/
 
 	ST7789_WriteCommand(0xE0);
 	{
-		uint8_t data[] = {0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23};
+		uint8_t data[] = { 0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 0x54, 0x4C,
+				0x18, 0x0D, 0x0B, 0x1F, 0x23 };
 		ST7789_WriteData(data, sizeof(data));
 	}
 
-    ST7789_WriteCommand(0xE1);
+	ST7789_WriteCommand(0xE1);
 	{
-		uint8_t data[] = {0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F, 0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23};
+		uint8_t data[] = { 0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F, 0x44, 0x51,
+				0x2F, 0x1F, 0x1F, 0x20, 0x23 };
 		ST7789_WriteData(data, sizeof(data));
 	}
-    ST7789_WriteCommand (ST7789_INVON);		//	Inversion ON
-	ST7789_WriteCommand (ST7789_SLPOUT);	//	Out of sleep mode
-	HAL_Delay(5);							//	Datasheet: wait 5 ms before the next command
-  	ST7789_WriteCommand (ST7789_NORON);		//	Normal Display on
-  	ST7789_WriteCommand (ST7789_DISPON);	//	Main screen turned on
+	ST7789_WriteCommand(ST7789_INVON);		//	Inversion ON
+	ST7789_WriteCommand(ST7789_SLPOUT);	//	Out of sleep mode
+	HAL_Delay(5);				//	Datasheet: wait 5 ms before the next command
+	ST7789_WriteCommand(ST7789_NORON);		//	Normal Display on
+	ST7789_WriteCommand(ST7789_DISPON);	//	Main screen turned on
 
 	ST7789_End();
 	HAL_Delay(50);
@@ -397,8 +392,7 @@ void ST7789_Init(void)
  * @param color -> color to Fill with
  * @return none
  */
-void ST7789_Fill_Color(uint16_t color)
-{
+void ST7789_Fill_Color(uint16_t color) {
 	ST7789_FillArea(0, 0, ST7789_WIDTH - 1, ST7789_HEIGHT - 1, color);
 }
 
@@ -408,8 +402,7 @@ void ST7789_Fill_Color(uint16_t color)
  * @param color -> color of the Pixel
  * @return none
  */
-void ST7789_DrawPixel(uint16_t x, uint16_t y, uint16_t color)
-{
+void ST7789_DrawPixel(uint16_t x, uint16_t y, uint16_t color) {
 	ST7789_FillArea(x, y, x, y, color);
 }
 
@@ -420,9 +413,10 @@ void ST7789_DrawPixel(uint16_t x, uint16_t y, uint16_t color)
  * @param color -> color to Fill with
  * @return none
  */
-void ST7789_Fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, uint16_t color)
-{
-	if ((xEnd >= ST7789_WIDTH) || (yEnd >= ST7789_HEIGHT))	return;
+void ST7789_Fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd,
+		uint16_t color) {
+	if ((xEnd >= ST7789_WIDTH) || (yEnd >= ST7789_HEIGHT))
+		return;
 	ST7789_FillArea(xSta, ySta, xEnd, yEnd, color);
 }
 
@@ -432,10 +426,10 @@ void ST7789_Fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, uin
  * @param color -> color of the Pixel
  * @return none
  */
-void ST7789_DrawPixel_4px(uint16_t x, uint16_t y, uint16_t color)
-{
+void ST7789_DrawPixel_4px(uint16_t x, uint16_t y, uint16_t color) {
 	/* 3x3 block centered on (x, y), clipped at the screen edges */
-	ST7789_FillArea((int32_t)x - 1, (int32_t)y - 1, (int32_t)x + 1, (int32_t)y + 1, color);
+	ST7789_FillArea((int32_t) x - 1, (int32_t) y - 1, (int32_t) x + 1,
+			(int32_t) y + 1, color);
 }
 
 /**
@@ -447,10 +441,10 @@ void ST7789_DrawPixel_4px(uint16_t x, uint16_t y, uint16_t color)
  * @return none
  */
 void ST7789_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
-        uint16_t color) {
+		uint16_t color) {
 	int32_t x0 = x1, y0 = y1, xe = x2, ye = y2, swap;
-    int32_t steep = ABS(ye - y0) > ABS(xe - x0);
-    if (steep) {
+	int32_t steep = ABS(ye - y0) > ABS(xe - x0);
+	if (steep) {
 		swap = x0;
 		x0 = y0;
 		y0 = swap;
@@ -458,9 +452,9 @@ void ST7789_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
 		swap = xe;
 		xe = ye;
 		ye = swap;
-    }
+	}
 
-    if (x0 > xe) {
+	if (x0 > xe) {
 		swap = x0;
 		x0 = xe;
 		xe = swap;
@@ -468,28 +462,28 @@ void ST7789_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
 		swap = y0;
 		y0 = ye;
 		ye = swap;
-    }
+	}
 
-    int32_t dx = xe - x0;
-    int32_t dy = ABS(ye - y0);
-    int32_t err = dx / 2;
-    int32_t ystep = (y0 < ye) ? 1 : -1;
-    int32_t run_start = x0;
+	int32_t dx = xe - x0;
+	int32_t dy = ABS(ye - y0);
+	int32_t err = dx / 2;
+	int32_t ystep = (y0 < ye) ? 1 : -1;
+	int32_t run_start = x0;
 
-    for (; x0 <= xe; x0++) {
-        err -= dy;
-        /* The minor coordinate changes after this pixel (or the line ends): flush the run */
-        if (err < 0 || x0 == xe) {
-            if (steep) {
-                ST7789_FillArea(y0, run_start, y0, x0, color);
-            } else {
-                ST7789_FillArea(run_start, y0, x0, y0, color);
-            }
-            y0 += ystep;
-            err += dx;
-            run_start = x0 + 1;
-        }
-    }
+	for (; x0 <= xe; x0++) {
+		err -= dy;
+		/* The minor coordinate changes after this pixel (or the line ends): flush the run */
+		if (err < 0 || x0 == xe) {
+			if (steep) {
+				ST7789_FillArea(y0, run_start, y0, x0, color);
+			} else {
+				ST7789_FillArea(run_start, y0, x0, y0, color);
+			}
+			y0 += ystep;
+			err += dx;
+			run_start = x0 + 1;
+		}
+	}
 }
 
 /**
@@ -498,8 +492,8 @@ void ST7789_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
  * @param color -> color of the Rectangle line
  * @return none
  */
-void ST7789_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
-{
+void ST7789_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
+		uint16_t color) {
 	ST7789_DrawLine(x1, y1, x2, y1, color);
 	ST7789_DrawLine(x1, y1, x1, y2, color);
 	ST7789_DrawLine(x1, y2, x2, y2, color);
@@ -511,8 +505,8 @@ void ST7789_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, ui
  * midpoint algorithm where y stayed constant while x went from xs to xe.
  * Those pixels are straight runs, so each arc is one fill.
  */
-static void ST7789_CircleArcs(int32_t x0, int32_t y0, int32_t xs, int32_t xe, int32_t y, uint16_t color)
-{
+static void ST7789_CircleArcs(int32_t x0, int32_t y0, int32_t xs, int32_t xe,
+		int32_t y, uint16_t color) {
 	ST7789_FillArea(x0 + xs, y0 + y, x0 + xe, y0 + y, color);
 	ST7789_FillArea(x0 - xe, y0 + y, x0 - xs, y0 + y, color);
 	ST7789_FillArea(x0 + xs, y0 - y, x0 + xe, y0 - y, color);
@@ -531,8 +525,8 @@ static void ST7789_CircleArcs(int32_t x0, int32_t y0, int32_t xs, int32_t xe, in
  * @param color -> color of circle line
  * @return  none
  */
-static void ST7789_CircleOutline(int32_t x0, int32_t y0, int32_t r, uint16_t color)
-{
+static void ST7789_CircleOutline(int32_t x0, int32_t y0, int32_t r,
+		uint16_t color) {
 	int32_t f = 1 - r;
 	int32_t ddF_x = 1;
 	int32_t ddF_y = -2 * r;
@@ -562,8 +556,7 @@ static void ST7789_CircleOutline(int32_t x0, int32_t y0, int32_t r, uint16_t col
  * @param color -> color of circle line
  * @return  none
  */
-void ST7789_DrawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color)
-{
+void ST7789_DrawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
 	ST7789_CircleOutline(x0, y0, r, color);
 }
 
@@ -574,8 +567,8 @@ void ST7789_DrawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color)
  * @param data -> pointer of the Image array
  * @return none
  */
-void ST7789_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t *data)
-{
+void ST7789_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+		const uint16_t *data) {
 	if ((x >= ST7789_WIDTH) || (y >= ST7789_HEIGHT))
 		return;
 	if ((x + w - 1) >= ST7789_WIDTH)
@@ -585,7 +578,7 @@ void ST7789_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint
 
 	ST7789_Begin();
 	ST7789_SetAddressWindow(x, y, x + w - 1, y + h - 1);
-	ST7789_WriteData((const uint8_t *)data, sizeof(uint16_t) * w * h);
+	ST7789_WriteData((const uint8_t*) data, sizeof(uint16_t) * w * h);
 	ST7789_End();
 }
 
@@ -594,10 +587,9 @@ void ST7789_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint
  * @param invert -> Whether to invert
  * @return none
  */
-void ST7789_InvertColors(uint8_t invert)
-{
+void ST7789_InvertColors(uint8_t invert) {
 	ST7789_Begin();
-	ST7789_WriteCommand(invert ? 0x21 /* INVON */ : 0x20 /* INVOFF */);
+	ST7789_WriteCommand(invert ? 0x21 /* INVON */: 0x20 /* INVOFF */);
 	ST7789_End();
 }
 
@@ -607,9 +599,8 @@ void ST7789_InvertColors(uint8_t invert)
  * pixel buffer and sent as one window. Characters outside the font
  * (printable ASCII) are drawn as '?'.
  */
-static void ST7789_RenderText(int32_t x0, int32_t y0, const char *str, int32_t len,
-		FontDef font, uint16_t color, uint16_t bgcolor)
-{
+static void ST7789_RenderText(int32_t x0, int32_t y0, const char *str,
+		int32_t len, FontDef font, uint16_t color, uint16_t bgcolor) {
 	int32_t x1 = x0 + len * font.width - 1;
 	int32_t y1 = y0 + font.height - 1;
 
@@ -631,7 +622,7 @@ static void ST7789_RenderText(int32_t x0, int32_t y0, const char *str, int32_t l
 
 	for (y = vy0; y <= vy1; y++) {
 		if (n + vw > DISP_BUF_LEN) {
-			ST7789_SPI_Write((uint8_t *)disp_buf, n * sizeof(uint16_t));
+			ST7789_SPI_Write((uint8_t*) disp_buf, n * sizeof(uint16_t));
 			n = 0;
 		}
 		for (i = 0; i < len; i++) {
@@ -647,7 +638,7 @@ static void ST7789_RenderText(int32_t x0, int32_t y0, const char *str, int32_t l
 			}
 		}
 	}
-	ST7789_SPI_Write((uint8_t *)disp_buf, n * sizeof(uint16_t));
+	ST7789_SPI_Write((uint8_t*) disp_buf, n * sizeof(uint16_t));
 
 	ST7789_End();
 }
@@ -661,8 +652,8 @@ static void ST7789_RenderText(int32_t x0, int32_t y0, const char *str, int32_t l
  * @param bgcolor -> background color of the char
  * @return  none
  */
-void ST7789_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor)
-{
+void ST7789_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font,
+		uint16_t color, uint16_t bgcolor) {
 	ST7789_RenderText(x, y, &ch, 1, font, color, bgcolor);
 }
 
@@ -675,8 +666,8 @@ void ST7789_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t co
  * @param bgcolor -> background color of the string
  * @return  none
  */
-void ST7789_WriteString(uint16_t x, uint16_t y, const char *str, FontDef font, uint16_t color, uint16_t bgcolor)
-{
+void ST7789_WriteString(uint16_t x, uint16_t y, const char *str, FontDef font,
+		uint16_t color, uint16_t bgcolor) {
 	/* Characters that end up on the same line are sent as one run */
 	const char *run = str;
 	uint16_t run_x = x;
@@ -717,16 +708,15 @@ void ST7789_WriteString(uint16_t x, uint16_t y, const char *str, FontDef font, u
  * @param color -> color of the Rectangle
  * @return  none
  */
-void ST7789_DrawFilledRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
-{
+void ST7789_DrawFilledRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+		uint16_t color) {
 	/* Check input parameters */
-	if (x >= ST7789_WIDTH ||
-		y >= ST7789_HEIGHT) {
+	if (x >= ST7789_WIDTH || y >= ST7789_HEIGHT) {
 		/* Return error */
 		return;
 	}
 
-	ST7789_FillArea(x, y, (int32_t)x + w, (int32_t)y + h, color);
+	ST7789_FillArea(x, y, (int32_t) x + w, (int32_t) y + h, color);
 }
 
 /**
@@ -735,8 +725,8 @@ void ST7789_DrawFilledRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, 
  * @param color ->color of the lines
  * @return  none
  */
-void ST7789_DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint16_t color)
-{
+void ST7789_DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
+		uint16_t x3, uint16_t y3, uint16_t color) {
 	/* Draw lines */
 	ST7789_DrawLine(x1, y1, x2, y2, color);
 	ST7789_DrawLine(x2, y2, x3, y3, color);
@@ -749,8 +739,7 @@ void ST7789_DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uin
  * x is stored clamped to ST7789_WIDTH (anything past the right edge is clipped anyway).
  */
 static void ST7789_TriangleEdge(int32_t x0, int32_t y0, int32_t xe, int32_t ye,
-		int16_t *xmin, int16_t *xmax)
-{
+		int16_t *xmin, int16_t *xmax) {
 	int32_t swap;
 	int32_t steep = ABS(ye - y0) > ABS(xe - x0);
 	if (steep) {
@@ -805,8 +794,8 @@ static void ST7789_TriangleEdge(int32_t x0, int32_t y0, int32_t xe, int32_t ye,
  * @param color ->color of the triangle
  * @return  none
  */
-void ST7789_DrawFilledTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint16_t color)
-{
+void ST7789_DrawFilledTriangle(uint16_t x1, uint16_t y1, uint16_t x2,
+		uint16_t y2, uint16_t x3, uint16_t y3, uint16_t color) {
 	int16_t xmin[ST7789_HEIGHT], xmax[ST7789_HEIGHT];
 	int32_t y;
 	int32_t ytop = y1, ybot = y1;
@@ -841,8 +830,8 @@ void ST7789_DrawFilledTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y
 /**
  * @brief Fill the two rows y0 +- dy of a filled circle with half-width hw
  */
-static void ST7789_CircleRows(int32_t x0, int32_t y0, int32_t dy, int32_t hw, uint16_t color)
-{
+static void ST7789_CircleRows(int32_t x0, int32_t y0, int32_t dy, int32_t hw,
+		uint16_t color) {
 	ST7789_FillArea(x0 - hw, y0 + dy, x0 + hw, y0 + dy, color);
 	if (dy != 0)
 		ST7789_FillArea(x0 - hw, y0 - dy, x0 + hw, y0 - dy, color);
@@ -856,8 +845,7 @@ static void ST7789_CircleRows(int32_t x0, int32_t y0, int32_t dy, int32_t hw, ui
  * @param color -> color of circle
  * @return  none
  */
-void ST7789_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
-{
+void ST7789_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
 	int32_t f = 1 - r;
 	int32_t ddF_x = 1;
 	int32_t ddF_y = -2 * r;
@@ -902,8 +890,7 @@ void ST7789_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
  * @param color -> color of the outline
  * @return none
  */
-void ST7789_Rect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color)
-{
+void ST7789_Rect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color) {
 	if (w == 0 || h == 0)
 		return;
 	int32_t x0 = cx - w / 2, y0 = cy - h / 2;
@@ -922,8 +909,8 @@ void ST7789_Rect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color)
  * @param color -> color of the rectangle
  * @return none
  */
-void ST7789_FillRect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color)
-{
+void ST7789_FillRect(int16_t cx, int16_t cy, uint16_t w, uint16_t h,
+		uint16_t color) {
 	if (w == 0 || h == 0)
 		return;
 	int32_t x0 = cx - w / 2, y0 = cy - h / 2;
@@ -937,8 +924,7 @@ void ST7789_FillRect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t co
  * @param color -> color of the outline
  * @return none
  */
-void ST7789_Circle(int16_t cx, int16_t cy, uint16_t r, uint16_t color)
-{
+void ST7789_Circle(int16_t cx, int16_t cy, uint16_t r, uint16_t color) {
 	ST7789_CircleOutline(cx, cy, r, color);
 }
 
@@ -949,8 +935,7 @@ void ST7789_Circle(int16_t cx, int16_t cy, uint16_t r, uint16_t color)
  * @param color -> color of the circle
  * @return none
  */
-void ST7789_FillCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color)
-{
+void ST7789_FillCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color) {
 	ST7789_DrawFilledCircle(cx, cy, r, color);
 }
 
@@ -959,8 +944,7 @@ void ST7789_FillCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color)
  * capital letters, taken from the glyph 'H'. The cell has room for
  * descenders below, so centering on capitals looks centered to the eye.
  */
-static int32_t ST7789_FontCapMiddle(FontDef font)
-{
+static int32_t ST7789_FontCapMiddle(FontDef font) {
 	const uint16_t *glyph = &font.data[('H' - 32) * font.height];
 	int32_t top = 0, bottom = font.height - 1;
 
@@ -983,68 +967,63 @@ static int32_t ST7789_FontCapMiddle(FontDef font)
  * @param bgcolor -> background color of the text
  * @return none
  */
-void ST7789_Text(int16_t cx, int16_t cy, const char *str, FontDef font, uint16_t color, uint16_t bgcolor)
-{
+void ST7789_Text(int16_t cx, int16_t cy, const char *str, FontDef font,
+		uint16_t color, uint16_t bgcolor) {
 	int32_t len = 0;
 	while (str[len])
 		len++;
 
-	ST7789_RenderText(cx - (len * font.width) / 2, cy - ST7789_FontCapMiddle(font),
-			str, len, font, color, bgcolor);
+	ST7789_RenderText(cx - (len * font.width) / 2,
+			cy - ST7789_FontCapMiddle(font), str, len, font, color, bgcolor);
 }
-
 
 /**
  * @brief Open/Close tearing effect line
  * @param tear -> Whether to tear
  * @return none
  */
-void ST7789_TearEffect(uint8_t tear)
-{
+void ST7789_TearEffect(uint8_t tear) {
 	ST7789_Begin();
 	if (tear) {
 		ST7789_WriteCommand(0x35 /* TEON */);
 		ST7789_WriteSmallData(0x00);	// TEM = 0: signal on V-blank only
-	}
-	else
+	} else
 		ST7789_WriteCommand(0x34 /* TEOFF */);
 	ST7789_End();
 }
-
 
 /** 
  * @brief A Simple test function for ST7789
  * @param  none
  * @return  none
  */
-void ST7789_Test(void)
-{
+void ST7789_Test(void) {
 	ST7789_Fill_Color(WHITE);
 	HAL_Delay(1000);
 	ST7789_WriteString(10, 20, "Speed Test", Font_11x18, RED, WHITE);
 	HAL_Delay(1000);
 	ST7789_Fill_Color(CYAN);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(RED);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(BLUE);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(GREEN);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(YELLOW);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(BROWN);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(DARKBLUE);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(MAGENTA);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(LIGHTGREEN);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(LGRAY);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(LBBLUE);
-    HAL_Delay(500);
+	HAL_Delay(500);
 	ST7789_Fill_Color(WHITE);
 	HAL_Delay(500);
 
@@ -1086,6 +1065,6 @@ void ST7789_Test(void)
 
 	//	If FLASH cannot storage anymore datas, please delete codes below.
 	ST7789_Fill_Color(WHITE);
-	ST7789_DrawImage(0, 0, 128, 128, (uint16_t *)saber);
+	ST7789_DrawImage(0, 0, 128, 128, (uint16_t*) saber);
 	HAL_Delay(3000);
 }
