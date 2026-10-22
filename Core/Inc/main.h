@@ -39,6 +39,7 @@ extern "C" {
 #include "knob.h"
 #include "signal.h"
 #include "ui.h"
+#include "ui_helpers.h"
 
 #include "st7789.h"
 /* USER CODE END Includes */
