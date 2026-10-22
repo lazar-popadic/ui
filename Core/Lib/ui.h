@@ -8,6 +8,7 @@
 #ifndef LIB_UI_H_
 #define LIB_UI_H_
 
+void ui_init();
 void top_panel_init();
 void top_panel_loop(uint8_t chinch, uint8_t button, uint16_t knob_pos);
 void bottom_panel_init();

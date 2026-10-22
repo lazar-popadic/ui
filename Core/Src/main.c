@@ -99,19 +99,11 @@ int main(void)
 	knob_init();
 
 	ST7789_Init();
+  ui_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	ST7789_Fill_Color(BLACK);
-	// Bottom panel: switches
-	bottom_panel_init();
-	// Top panel: Knob position, push button, chinch
-	top_panel_init();
-	// Bottom panel
-	// Nesto za komunikaciju
-	// Panel separators
-	ST7789_DrawRect(1, 39, 239, 240, PEACH);
 	while (1) {
     /* USER CODE END WHILE */
 

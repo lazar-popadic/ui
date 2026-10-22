@@ -5,68 +5,126 @@
  *      Author: lazar
  */
 
-#define BG_COLOR	DARKBLUE
-#define FG_COLOR	PEACH
-
 #include "main.h"
 
-// TODO: izbaci magicne brojeve i sve lepo izbaci u promenljive
-// TODO: dodaj i full screen refresh funkciju
+// TODO: dodaj i full screen refresh funkciju, na neku promenljivu
+
+/* Panels */
+FontDef *panel_font = &Font_7x10;
+uint16_t panel_height = 40;
+uint16_t panel_foreground_color = PEACH;
+uint16_t panel_background_color = DARKBLUE;
+uint16_t button_radius = 16;
+
+/* Top panel */
+uint16_t knob_x = 159;
+uint16_t chinch_x = 79;
+uint16_t chinch_width = 51;
+uint16_t chinch_height = 21;
+
+/* Bottom panel */
+uint16_t pc_x = 59;
+uint16_t bt_x = 119;
+uint16_t stm_x = 179;
+
+/* Knob dot */
+uint16_t knob_dot_radius = 4;
+uint16_t knob_pos_zero = 8192;
+float knob_step = M_PI / 10;
+float knob_offset = M_PI * 0.5f;
+
+/* Calculated in the panel init functions */
+uint16_t top_panel_y, bottom_panel_y;
 
 uint8_t chinch_ = 0, button_ = 0;
-uint16_t knob_pos_ = 8192;
+uint16_t knob_pos_ = 0;
 uint8_t pc_ = 0, bt_ = 0, drive_ = 0;
 
+void ui_init() {
+	ST7789_Fill_Color(BLACK);
+	// Bottom panel: switches
+	bottom_panel_init();
+	// Top panel: Knob position, push button, chinch
+	top_panel_init();
+	// Panel separators
+	ST7789_DrawRect(1, panel_height - 1, ST7789_WIDTH - 1,
+			ST7789_HEIGHT - panel_height, panel_foreground_color);
+}
+
 void top_panel_init() {
-	ST7789_DrawFilledRect(0, 0, 239, 39, BG_COLOR);
-	draw_circle_button(159, 19, 16, "Knob", Font_7x10, FG_COLOR, BG_COLOR, 0);
-	draw_rect_button(79, 19, 51, 21, "Chinch", Font_7x10, FG_COLOR, BG_COLOR, 0);
-	draw_knob_dot(159, 19, 16, -M_PI*0.5, 4, FG_COLOR, BG_COLOR);
+	top_panel_y = (panel_height - 1) / 2;
+	knob_pos_ = knob_pos_zero;
+
+	ST7789_DrawFilledRect(0, 0, ST7789_WIDTH - 1, panel_height - 1,
+			panel_background_color);
+	draw_circle_button(knob_x, top_panel_y, button_radius, "Knob", *panel_font,
+			panel_foreground_color, panel_background_color, 0);
+	draw_rect_button(chinch_x, top_panel_y, chinch_width, chinch_height,
+			"Chinch", *panel_font, panel_foreground_color,
+			panel_background_color, 0);
+	draw_knob_dot(knob_x, top_panel_y, button_radius, knob_pos_, knob_pos_zero,
+			knob_step, knob_offset, knob_dot_radius, panel_foreground_color,
+			panel_background_color);
 }
 
 void top_panel_loop(uint8_t chinch, uint8_t button, uint16_t knob_pos) {
 	if (chinch_ != chinch) {
 		chinch_ = chinch;
-		draw_rect_button(79, 19, 51, 21, "Chinch", Font_7x10, FG_COLOR, BG_COLOR, chinch);
+		draw_rect_button(chinch_x, top_panel_y, chinch_width, chinch_height,
+				"Chinch", *panel_font, panel_foreground_color,
+				panel_background_color, chinch);
 	}
 	if (button_ != button) {
 		button_ = button;
-		draw_circle_button(159, 19, 16, "Knob", Font_7x10, FG_COLOR, BG_COLOR, button);
-		// Reset knob dot
-		draw_knob_dot(159, 19, 16, (knob_pos_ - 8192) * M_PI / 10 - M_PI * 0.5f,
-				4, FG_COLOR, BG_COLOR);
+		draw_circle_button(knob_x, top_panel_y, button_radius, "Knob",
+				*panel_font, panel_foreground_color, panel_background_color,
+				button);
+		draw_knob_dot(knob_x, top_panel_y, button_radius, knob_pos_,
+				knob_pos_zero, knob_step, knob_offset, knob_dot_radius,
+				panel_foreground_color, panel_background_color);
 	}
 	if (knob_pos_ != knob_pos) {
-		// Reset previous dot (knob_pos_ still holds its position)
-		erase_knob_dot(159, 19, 16, (knob_pos_ - 8192) * M_PI / 10 - M_PI * 0.5f,
-				4, BG_COLOR);
+		erase_knob_dot(knob_x, top_panel_y, button_radius, knob_pos_,
+				knob_pos_zero, knob_step, knob_offset, knob_dot_radius,
+				panel_background_color);
 		knob_pos_ = knob_pos;
-		// Reset knob outline, text and fill
-		draw_circle_button(159, 19, 16, "Knob", Font_7x10, FG_COLOR, BG_COLOR, button);
-
-		draw_knob_dot(159, 19, 16, (knob_pos_ - 8192) * M_PI / 10 - M_PI * 0.5f,
-				4, FG_COLOR, BG_COLOR);
+		draw_circle_button(knob_x, top_panel_y, button_radius, "Knob",
+				*panel_font, panel_foreground_color, panel_background_color,
+				button);
+		draw_knob_dot(knob_x, top_panel_y, button_radius, knob_pos_,
+				knob_pos_zero, knob_step, knob_offset, knob_dot_radius,
+				panel_foreground_color, panel_background_color);
 	}
 }
 
 void bottom_panel_init() {
-	ST7789_DrawFilledRect(0, 240, 239, 279, BG_COLOR);
-	draw_circle_button(59, 260, 16, "PC", Font_7x10, FG_COLOR, BG_COLOR, 0);
-	draw_circle_button(119, 260, 16, "BT", Font_7x10, FG_COLOR, BG_COLOR, 0);
-	draw_circle_button(179, 260, 16, "STM", Font_7x10, FG_COLOR, BG_COLOR, 0);
+	bottom_panel_y = ST7789_HEIGHT - 1 - (panel_height - 1) / 2;
+
+	ST7789_DrawFilledRect(0, ST7789_HEIGHT - panel_height, ST7789_WIDTH - 1,
+			ST7789_HEIGHT - 1, panel_background_color);
+	draw_circle_button(pc_x, bottom_panel_y, button_radius, "PC", *panel_font,
+			panel_foreground_color, panel_background_color, 0);
+	draw_circle_button(bt_x, bottom_panel_y, button_radius, "BT", *panel_font,
+			panel_foreground_color, panel_background_color, 0);
+	draw_circle_button(stm_x, bottom_panel_y, button_radius, "STM", *panel_font,
+			panel_foreground_color, panel_background_color, 0);
 }
 
 void bottom_panel_loop(uint8_t pc, uint8_t bt, uint8_t drive) {
 	if (pc_ != pc) {
 		pc_ = pc;
-		draw_circle_button(59, 260, 16, "PC", Font_7x10, FG_COLOR, BG_COLOR, pc);
+		draw_circle_button(pc_x, bottom_panel_y, button_radius, "PC",
+				*panel_font, panel_foreground_color, panel_background_color, pc);
 	}
 	if (bt_ != bt) {
 		bt_ = bt;
-		draw_circle_button(119, 260, 16, "BT", Font_7x10, FG_COLOR, BG_COLOR, bt);
+		draw_circle_button(bt_x, bottom_panel_y, button_radius, "BT",
+				*panel_font, panel_foreground_color, panel_background_color, bt);
 	}
 	if (drive_ != drive) {
 		drive_ = drive;
-		draw_circle_button(179, 260, 16, "STM", Font_7x10, FG_COLOR, BG_COLOR, drive);
+		draw_circle_button(stm_x, bottom_panel_y, button_radius, "STM",
+				*panel_font, panel_foreground_color, panel_background_color,
+				drive);
 	}
 }
