@@ -26,7 +26,7 @@ void top_panel_init() {
 	ST7789_DrawRectCentered(79, 19, 51, 21, FG_COLOR);
 	ST7789_DrawText(159, 19, "Knob", Font_7x10, FG_COLOR, BG_COLOR);
 	ST7789_DrawText(79, 19, "Chinch", Font_7x10, FG_COLOR, BG_COLOR);
-	knob_dot(&knob_x_, &knob_y_, 159, 19, 15, -M_PI*0.5);
+	knob_dot(&knob_x_, &knob_y_, 159, 19, 16, -M_PI*0.5);
 	ST7789_DrawFilledCircle(knob_x_, knob_y_, 4, BG_COLOR);
 	ST7789_DrawCircle(knob_x_, knob_y_, 3, FG_COLOR);
 	ST7789_DrawCircle(knob_x_, knob_y_, 2, FG_COLOR);
@@ -60,7 +60,7 @@ void top_panel_loop(uint8_t chinch, uint8_t button, uint16_t knob_pos) {
 	if (knob_pos_ != knob_pos) {
 		knob_pos_ = knob_pos;
 		// Reset previous dot
-		ST7789_DrawFilledCircle(knob_x_, knob_y_, 3, BG_COLOR);
+		ST7789_DrawFilledCircle(knob_x_, knob_y_, 4, BG_COLOR);
 		ST7789_DrawCircle(159, 19, 16, FG_COLOR);
 		// Reset knob text and fill
 		if (button) {

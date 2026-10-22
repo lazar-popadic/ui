@@ -111,7 +111,7 @@ int main(void)
 	// Bottom panel
 	// Nesto za komunikaciju
 	// Panel separators
-	ST7789_DrawRect(1, 39, 239, 239, PEACH);
+	ST7789_DrawRect(1, 39, 239, 240, PEACH);
 	while (1) {
     /* USER CODE END WHILE */
 
