@@ -46,8 +46,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t pc_test = 0, bt_test = 0, drive_test = 0;
-uint8_t chinch_test = 0;
+static volatile uint8_t display_refresh_ = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,9 +106,11 @@ int main(void) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		top_panel_loop(chinch_test, get_knob_button(), get_knob_position());
-		bottom_panel_loop(pc_test, bt_test, drive_test);
-//		ST7789_Test();
+		if (display_refresh_) {
+			display_refresh_ = 0;
+			ui_init();
+		}
+		ui_update();
 	}
 	/* USER CODE END 3 */
 }

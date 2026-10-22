@@ -39,6 +39,7 @@ extern "C" {
 #include "knob.h"
 #include "signal.h"
 #include "ui.h"
+#include "switch.h"
 
 #include "st7789.h"
 #include "ui_helpers.h"
@@ -75,8 +76,14 @@ void Error_Handler(void);
 #define Encoder_B_GPIO_Port GPIOA
 #define Knob_button_Pin GPIO_PIN_0
 #define Knob_button_GPIO_Port GPIOB
+#define PC_Switch_Pin GPIO_PIN_12
+#define PC_Switch_GPIO_Port GPIOB
+#define BT_Switch_Pin GPIO_PIN_13
+#define BT_Switch_GPIO_Port GPIOB
+#define Drive_Switch_Pin GPIO_PIN_14
+#define Drive_Switch_GPIO_Port GPIOB
 #define Chinch_Pin GPIO_PIN_15
-#define Chinch_GPIO_Port GPIOA
+#define Chinch_GPIO_Port GPIOB
 #define TFT_SCK_Pin GPIO_PIN_3
 #define TFT_SCK_GPIO_Port GPIOB
 #define TFT_MOSI_Pin GPIO_PIN_5

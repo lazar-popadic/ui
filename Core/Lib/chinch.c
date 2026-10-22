@@ -9,7 +9,7 @@
 #include "gpio.h"
 
 static volatile uint8_t chinch_debounced_;
-static float chinch_time_ = 0.02f;
+static float chinch_time_ = 0.01f;
 static float chinch_time_accumulated_ = 0.0f;
 
 uint8_t chinch_read(float dt) {

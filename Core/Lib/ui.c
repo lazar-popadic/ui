@@ -6,6 +6,7 @@
  */
 
 #include "main.h"
+#include "tim.h"
 
 // TODO: dodaj i full screen refresh funkciju, na neku promenljivu
 
@@ -25,7 +26,7 @@ uint16_t chinch_height = 21;
 /* Bottom panel */
 uint16_t pc_x = 59;
 uint16_t bt_x = 119;
-uint16_t stm_x = 179;
+uint16_t drive_x = 179;
 
 /* Knob dot */
 uint16_t knob_dot_radius = 4;
@@ -40,8 +41,25 @@ uint8_t chinch_ = 0, button_ = 0;
 uint16_t knob_pos_ = 0;
 uint8_t pc_ = 0, bt_ = 0, drive_ = 0;
 
-void ui_init() {
+void ui_update(void) {
+	top_panel_loop(get_chinch(), get_knob_button(), get_knob_position());
+	bottom_panel_loop(get_pc_switch(), get_bt_switch(), get_drive_switch());
+}
+
+void ui_init(void) {
+	// Reset variables
+	chinch_ = 0;
+	button_ = 0;
+	knob_pos_ = 0;
+	pc_ = 0;
+	bt_ = 0;
+	drive_ = 0;
+	// Black screen
 	ST7789_Fill_Color(BLACK);
+	HAL_Delay(250);
+	// Initializing text fade
+	draw_init_text(1, 0, 32);
+	HAL_Delay(250);
 	// Bottom panel: switches
 	bottom_panel_init();
 	// Top panel: Knob position, push button, chinch
@@ -51,7 +69,7 @@ void ui_init() {
 	ST7789_HEIGHT - panel_height, panel_foreground_color);
 }
 
-void top_panel_init() {
+void top_panel_init(void) {
 	top_panel_y = (panel_height - 1) / 2;
 	knob_pos_ = knob_pos_zero;
 
@@ -97,7 +115,7 @@ void top_panel_loop(uint8_t chinch, uint8_t button, uint16_t knob_pos) {
 	}
 }
 
-void bottom_panel_init() {
+void bottom_panel_init(void) {
 	bottom_panel_y = ST7789_HEIGHT - 1 - (panel_height - 1) / 2;
 
 	ST7789_DrawFilledRect(0, ST7789_HEIGHT - panel_height, ST7789_WIDTH - 1,
@@ -106,8 +124,8 @@ void bottom_panel_init() {
 			panel_foreground_color, panel_background_color, 0);
 	draw_circle_button(bt_x, bottom_panel_y, button_radius, "BT", *panel_font,
 			panel_foreground_color, panel_background_color, 0);
-	draw_circle_button(stm_x, bottom_panel_y, button_radius, "STM", *panel_font,
-			panel_foreground_color, panel_background_color, 0);
+	draw_circle_button(drive_x, bottom_panel_y, button_radius, "drive",
+			*panel_font, panel_foreground_color, panel_background_color, 0);
 }
 
 void bottom_panel_loop(uint8_t pc, uint8_t bt, uint8_t drive) {
@@ -125,7 +143,7 @@ void bottom_panel_loop(uint8_t pc, uint8_t bt, uint8_t drive) {
 	}
 	if (drive_ != drive) {
 		drive_ = drive;
-		draw_circle_button(stm_x, bottom_panel_y, button_radius, "STM",
+		draw_circle_button(drive_x, bottom_panel_y, button_radius, "drive",
 				*panel_font, panel_foreground_color, panel_background_color,
 				drive);
 	}
