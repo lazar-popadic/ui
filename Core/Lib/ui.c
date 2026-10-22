@@ -48,7 +48,7 @@ void ui_init() {
 	top_panel_init();
 	// Panel separators
 	ST7789_DrawRect(1, panel_height - 1, ST7789_WIDTH - 1,
-			ST7789_HEIGHT - panel_height, panel_foreground_color);
+	ST7789_HEIGHT - panel_height, panel_foreground_color);
 }
 
 void top_panel_init() {
@@ -101,7 +101,7 @@ void bottom_panel_init() {
 	bottom_panel_y = ST7789_HEIGHT - 1 - (panel_height - 1) / 2;
 
 	ST7789_DrawFilledRect(0, ST7789_HEIGHT - panel_height, ST7789_WIDTH - 1,
-			ST7789_HEIGHT - 1, panel_background_color);
+	ST7789_HEIGHT - 1, panel_background_color);
 	draw_circle_button(pc_x, bottom_panel_y, button_radius, "PC", *panel_font,
 			panel_foreground_color, panel_background_color, 0);
 	draw_circle_button(bt_x, bottom_panel_y, button_radius, "BT", *panel_font,
@@ -114,12 +114,14 @@ void bottom_panel_loop(uint8_t pc, uint8_t bt, uint8_t drive) {
 	if (pc_ != pc) {
 		pc_ = pc;
 		draw_circle_button(pc_x, bottom_panel_y, button_radius, "PC",
-				*panel_font, panel_foreground_color, panel_background_color, pc);
+				*panel_font, panel_foreground_color, panel_background_color,
+				pc);
 	}
 	if (bt_ != bt) {
 		bt_ = bt;
 		draw_circle_button(bt_x, bottom_panel_y, button_radius, "BT",
-				*panel_font, panel_foreground_color, panel_background_color, bt);
+				*panel_font, panel_foreground_color, panel_background_color,
+				bt);
 	}
 	if (drive_ != drive) {
 		drive_ = drive;

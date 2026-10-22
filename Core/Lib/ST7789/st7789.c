@@ -45,7 +45,7 @@ static void ST7789_SPI_Mode16Fixed(void) {
 	SPI_TypeDef *spi = ST7789_SPI_PORT.Instance;
 	DMA_Stream_TypeDef *dma = ST7789_SPI_PORT.hdmatx->Instance;
 
-	CLEAR_BIT(spi->CR1, SPI_CR1_SPE);// DFF may only change while SPI is disabled
+	CLEAR_BIT(spi->CR1, SPI_CR1_SPE); // DFF may only change while SPI is disabled
 	SET_BIT(spi->CR1, SPI_CR1_DFF);
 	SET_BIT(spi->CR1, SPI_CR1_SPE);
 	MODIFY_REG(dma->CR, DMA_SxCR_MINC | DMA_SxCR_PSIZE | DMA_SxCR_MSIZE,
@@ -187,18 +187,18 @@ static void ST7789_SendRotation(uint8_t m) {
 	switch (m) {
 	case 0:
 		ST7789_WriteSmallData(
-				ST7789_MADCTL_MX | ST7789_MADCTL_MY | ST7789_MADCTL_RGB);
+		ST7789_MADCTL_MX | ST7789_MADCTL_MY | ST7789_MADCTL_RGB);
 		break;
 	case 1:
 		ST7789_WriteSmallData(
-				ST7789_MADCTL_MY | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);
+		ST7789_MADCTL_MY | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);
 		break;
 	case 2:
 		ST7789_WriteSmallData(ST7789_MADCTL_RGB);
 		break;
 	case 3:
 		ST7789_WriteSmallData(
-				ST7789_MADCTL_MX | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);
+		ST7789_MADCTL_MX | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);
 		break;
 	default:
 		break;
@@ -808,8 +808,7 @@ void ST7789_DrawCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color) {
  * @param color -> color of the circle
  * @return none
  */
-void ST7789_DrawFilledCircle(int16_t cx, int16_t cy, uint16_t r,
-		uint16_t color) {
+void ST7789_DrawFilledCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color) {
 	int32_t f = 1 - (int32_t) r;
 	int32_t ddF_x = 1;
 	int32_t ddF_y = -2 * (int32_t) r;
@@ -943,7 +942,7 @@ void ST7789_DrawText(int16_t cx, int16_t cy, const char *str, FontDef font,
  */
 void ST7789_Test(void) {
 	static const uint16_t colors[] = { CYAN, RED, BLUE, GREEN, YELLOW, BROWN,
-			DARKBLUE, MAGENTA, LIGHTGREEN, LGRAY, LBBLUE, WHITE };
+	DARKBLUE, MAGENTA, LIGHTGREEN, LGRAY, LBBLUE, WHITE };
 	const int16_t xc = ST7789_WIDTH / 2;
 	uint32_t i;
 
