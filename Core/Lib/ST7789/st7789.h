@@ -206,6 +206,8 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 #define ST7789_RAMRD   0x2E
 
 #define ST7789_PTLAR   0x30
+#define ST7789_TEOFF   0x34
+#define ST7789_TEON    0x35
 #define ST7789_COLMOD  0x3A
 #define ST7789_MADCTL  0x36
 
@@ -252,44 +254,44 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 
-/* Basic functions. */
+/* Control functions */
 void ST7789_Init(void);
 void ST7789_SetRotation(uint8_t m);
-void ST7789_Fill_Color(uint16_t color);
-void ST7789_DrawPixel(uint16_t x, uint16_t y, uint16_t color);
-void ST7789_Fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, uint16_t color);
-void ST7789_DrawPixel_4px(uint16_t x, uint16_t y, uint16_t color);
+void ST7789_InvertColors(uint8_t invert);
+void ST7789_TearEffect(uint8_t tear);
 void ST7789_WaitIdle(void);
 
-/* Graphical functions. */
-void ST7789_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
-void ST7789_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
-void ST7789_DrawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color);
-void ST7789_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t *data);
-void ST7789_InvertColors(uint8_t invert);
+/*
+ * Drawing functions.
+ * Everything is clipped to the screen, so coordinates may lie off-screen.
+ *
+ * Shapes given by points: every point is a pixel that gets drawn, and a
+ * rectangle is given by two opposite corners (both inclusive, any order).
+ */
+void ST7789_Fill_Color(uint16_t color);
+void ST7789_DrawPixel(int16_t x, int16_t y, uint16_t color);
+void ST7789_DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+void ST7789_DrawRect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+void ST7789_DrawFilledRect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+void ST7789_DrawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+void ST7789_DrawFilledTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 
-/* Text functions. */
-void ST7789_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor);
-void ST7789_WriteString(uint16_t x, uint16_t y, const char *str, FontDef font, uint16_t color, uint16_t bgcolor);
-
-/* Extented Graphical functions. */
-void ST7789_DrawFilledRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
-void ST7789_DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint16_t color);
-void ST7789_DrawFilledTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint16_t color);
-void ST7789_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-
-/* Centered drawing functions: center pixel + size, clipped to the screen.
+/*
+ * Shapes given by center pixel + size.
  * A size of w pixels spans cx - w/2 .. cx - w/2 + w - 1 (odd sizes are symmetric).
  * A circle of radius r spans 2r+1 pixels. Text is one line, centered
- * horizontally on the whole string and vertically on the capital letters. */
-void ST7789_Rect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color);
-void ST7789_FillRect(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color);
-void ST7789_Circle(int16_t cx, int16_t cy, uint16_t r, uint16_t color);
-void ST7789_FillCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color);
-void ST7789_Text(int16_t cx, int16_t cy, const char *str, FontDef font, uint16_t color, uint16_t bgcolor);
-
-/* Command functions */
-void ST7789_TearEffect(uint8_t tear);
+ * horizontally on the whole string and vertically on the capital letters.
+ * A centered line is the diagonal of the |w| x |h| box: top-left to
+ * bottom-right when w and h have the same sign, bottom-left to top-right
+ * otherwise (|w| = 1 or |h| = 1 gives a vertical or horizontal line).
+ */
+void ST7789_DrawLineCentered(int16_t cx, int16_t cy, int16_t w, int16_t h, uint16_t color);
+void ST7789_DrawRectCentered(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color);
+void ST7789_DrawFilledRectCentered(int16_t cx, int16_t cy, uint16_t w, uint16_t h, uint16_t color);
+void ST7789_DrawCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color);
+void ST7789_DrawFilledCircle(int16_t cx, int16_t cy, uint16_t r, uint16_t color);
+void ST7789_DrawImage(int16_t cx, int16_t cy, uint16_t w, uint16_t h, const uint16_t *data);
+void ST7789_DrawText(int16_t cx, int16_t cy, const char *str, FontDef font, uint16_t color, uint16_t bgcolor);
 
 /* Simple test function. */
 void ST7789_Test(void);
