@@ -80,8 +80,8 @@ void Error_Handler(void);
 #define PC_Switch_GPIO_Port GPIOB
 #define BT_Switch_Pin GPIO_PIN_13
 #define BT_Switch_GPIO_Port GPIOB
-#define Drive_Switch_Pin GPIO_PIN_14
-#define Drive_Switch_GPIO_Port GPIOB
+#define Base_Switch_Pin GPIO_PIN_14
+#define Base_Switch_GPIO_Port GPIOB
 #define Chinch_Pin GPIO_PIN_15
 #define Chinch_GPIO_Port GPIOB
 #define TFT_SCK_Pin GPIO_PIN_3

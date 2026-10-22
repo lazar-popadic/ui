@@ -63,8 +63,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(Knob_button_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PC_Switch_Pin BT_Switch_Pin Drive_Switch_Pin */
-  GPIO_InitStruct.Pin = PC_Switch_Pin|BT_Switch_Pin|Drive_Switch_Pin;
+  /*Configure GPIO pins : PC_Switch_Pin BT_Switch_Pin Base_Switch_Pin */
+  GPIO_InitStruct.Pin = PC_Switch_Pin|BT_Switch_Pin|Base_Switch_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);

@@ -26,7 +26,7 @@ uint16_t chinch_height = 21;
 /* Bottom panel */
 uint16_t pc_x = 59;
 uint16_t bt_x = 119;
-uint16_t drive_x = 179;
+uint16_t base_x = 179;
 
 /* Knob dot */
 uint16_t knob_dot_radius = 4;
@@ -39,11 +39,11 @@ uint16_t top_panel_y, bottom_panel_y;
 
 uint8_t chinch_ = 0, button_ = 0;
 uint16_t knob_pos_ = 0;
-uint8_t pc_ = 0, bt_ = 0, drive_ = 0;
+uint8_t pc_ = 0, bt_ = 0, base_ = 0;
 
 void ui_update(void) {
 	top_panel_loop(get_chinch(), get_knob_button(), get_knob_position());
-	bottom_panel_loop(get_pc_switch(), get_bt_switch(), get_drive_switch());
+	bottom_panel_loop(get_pc_switch(), get_bt_switch(), get_base_switch());
 }
 
 void ui_init(void) {
@@ -53,7 +53,7 @@ void ui_init(void) {
 	knob_pos_ = 0;
 	pc_ = 0;
 	bt_ = 0;
-	drive_ = 0;
+	base_ = 0;
 	// Black screen
 	ST7789_Fill_Color(BLACK);
 	HAL_Delay(250);
@@ -124,11 +124,11 @@ void bottom_panel_init(void) {
 			panel_foreground_color, panel_background_color, 0);
 	draw_circle_button(bt_x, bottom_panel_y, button_radius, "BT", *panel_font,
 			panel_foreground_color, panel_background_color, 0);
-	draw_circle_button(drive_x, bottom_panel_y, button_radius, "drive",
+	draw_circle_button(base_x, bottom_panel_y, button_radius, "base",
 			*panel_font, panel_foreground_color, panel_background_color, 0);
 }
 
-void bottom_panel_loop(uint8_t pc, uint8_t bt, uint8_t drive) {
+void bottom_panel_loop(uint8_t pc, uint8_t bt, uint8_t base) {
 	if (pc_ != pc) {
 		pc_ = pc;
 		draw_circle_button(pc_x, bottom_panel_y, button_radius, "PC",
@@ -141,10 +141,10 @@ void bottom_panel_loop(uint8_t pc, uint8_t bt, uint8_t drive) {
 				*panel_font, panel_foreground_color, panel_background_color,
 				bt);
 	}
-	if (drive_ != drive) {
-		drive_ = drive;
-		draw_circle_button(drive_x, bottom_panel_y, button_radius, "drive",
+	if (base_ != base) {
+		base_ = base;
+		draw_circle_button(base_x, bottom_panel_y, button_radius, "base",
 				*panel_font, panel_foreground_color, panel_background_color,
-				drive);
+				base);
 	}
 }

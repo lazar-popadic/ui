@@ -13,7 +13,7 @@ static float sys_time_s = 0.0f;
 static const float dt_ = 0.001;
 
 static int8_t knob_button_edge_;
-static uint8_t chinch_, pc_, bt_, drive_;
+static uint8_t chinch_, pc_, bt_, base_;
 
 void time_ISR(void) {
 	sys_time_ms++;
@@ -24,7 +24,7 @@ void time_ISR(void) {
 	knob_position_read();
 	pc_ = pc_read(dt_);
 	bt_ = bt_read(dt_);
-	drive_ = drive_read(dt_);
+	base_ = base_read(dt_);
 
 	if (knob_button_edge_ == 1)
 		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);

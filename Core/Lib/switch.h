@@ -10,9 +10,9 @@
 
 uint8_t pc_read(float dt);
 uint8_t bt_read(float dt);
-uint8_t drive_read(float dt);
+uint8_t base_read(float dt);
 uint8_t get_pc_switch(void);
 uint8_t get_bt_switch(void);
-uint8_t get_drive_switch(void);
+uint8_t get_base_switch(void);
 
 #endif /* LIB_SWITCH_H_ */
